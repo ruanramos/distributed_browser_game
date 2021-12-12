@@ -2,10 +2,9 @@ const express = require('express');
 const websocketServer = require('websocket').server;
 const mongoose = require('mongoose');
 
-const payload = require('./payload');
-const game = require('./game.ts');
-
 const { v4: uuidv4 } = require('uuid');
+
+// mongoose.connect()
 
 const port = 3000;
 const app = express();
@@ -17,17 +16,11 @@ client.get("/", function (req, res) {
 
 client.listen(3001, () => console.log('listening on http port 3001'));
 
-class Client {
-    constructor(clientId, connection) {
-        this.clientId = clientId;
-        this.connection = connection;
-    }
-}
-
 let clients = {};
 let games = {};
 
 const METHODS = { PLAY: 'play', CREATE: 'create', JOIN: 'join', CONNECT: 'connect' };
+const MAX_PLAYERS = 3;
 let COLORS = ['red', 'green', 'yellow', 'black', 'blue', 'purple', 'orange'];
 let usedColors = [];
 
@@ -47,13 +40,19 @@ wsServer.on('request', (req, res) => {
 
     // generate new client id
     const clientId = uuidv4();
-    clients[clientId] = new Client(clientId, connection);
+    clients[clientId] = connection;
 
-    // TODO send already created games to client
-    const p = new payload.Payload(clientId, METHODS.CONNECT);
+    let gameIds = [];
+    Object.keys(games).forEach(g => {
+        gameIds.push(g);
+    })
 
     // send back the client connect
-    connection.send(p.stringify());
+    connection.send(JSON.stringify({
+        clientId: clientId,
+        method: METHODS.CONNECT,
+        games: gameIds
+    }));
 
     connection.on('open', () => console.log('opened!'));
     connection.on('close', () => {
@@ -63,29 +62,55 @@ wsServer.on('request', (req, res) => {
     });
     connection.on('message', (message) => {
         // TODO Can fail if client dont send json
-        const result = JSON.parse(message.utf8Data);
+        const response = JSON.parse(message.utf8Data);
 
         // received message from client
-        if (result.method === METHODS.CREATE) {
+        if (response.method === METHODS.CREATE) {
             const gameId = uuidv4();
-            const newGame = new game(clientId, gameId);
+            const newGame = {
+                gameCreator: clientId,
+                gameId: gameId,
+                clients: [],
+                ballsNum: 20
+            }
             games[gameId] = newGame;
-            console.log('Game created ' + gameId);
-            const p = new payload.GamePayload(METHODS.CREATE, newGame);
-            connection.send(p.stringify());
-        } else if (result.method === METHODS.JOIN) {
-            console.log(result);
-            const gameId = result.gameId;
-            const clientId = result.clientId;
+            console.log(`Game ${gameId} created by client ${response.clientId}`);
+
+            // TODO broadcast a new game was created
+
+            connection.send(JSON.stringify({
+                method: METHODS.CREATE,
+                game: newGame
+            }));
+            console.log(games)
+        }
+
+        // a client want to join
+        if (response.method === METHODS.JOIN) {
+            const gameId = response.gameId;
+            const clientId = response.clientId;
             const color = COLORS.pop();
             usedColors.push(color);
-            // TODO add max clients per game check
+            if (games[gameId].clients.length >= MAX_PLAYERS) {
+                console.log(`Client ${clientId} could not join game ${gameId} because it is full`);
+                return;
+            }
+
             games[gameId].clients.push({ clientId: color });
-            const p = new payload.GamePayload(METHODS.JOIN, games[gameId]);
-            connection.send(p.stringify());
-        } else if (result.method === 'list') {
-            console.log(games);
-            // console.log(JSON.stringify(games));
+            console.log(`Client ${clientId} joined game ${gameId}`);
+
+            // tell all clients in this game a new client has joined
+            const payload = {
+                method: METHODS.JOIN,
+                game: games[gameId]
+            };
+            games[gameId].clients.forEach(c => {
+                clients[c.clientId].connection.send(JSON.stringify(payload));
+            });
+
+        }
+
+        if (response.method === 'list') {
             const p = JSON.stringify({ method: 'list', games: games });
             connection.send(p);
         }

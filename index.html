@@ -66,8 +66,16 @@
                 clientId = response.clientId;
                 document.body.append("Client: " + clientId);
                 console.log("Client id set successfully " + clientId);
+                console.log(response);
+                response.games.forEach(game => {
+                    const joinOption = document.createElement('option');
+                    joinOption.value = game;
+                    joinOption.innerHTML = game;
+                    selectJoinGame.appendChild(joinOption);
+                });
+
             } else if (response.method === 'create') {
-                gameId = response.gameId;
+                gameId = response.game.gameId;
                 const joinOption = document.createElement('option');
                 joinOption.value = gameId;
                 joinOption.innerHTML = gameId;
