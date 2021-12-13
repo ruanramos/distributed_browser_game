@@ -21,6 +21,8 @@ let games = {};
 
 const METHODS = { PLAY: 'play', CREATE: 'create', JOIN: 'join', CONNECT: 'connect' };
 const MAX_PLAYERS = 3;
+
+// TODO make colors bound to game, not to server
 let COLORS = ['red', 'green', 'yellow', 'black', 'blue', 'purple', 'orange'];
 let usedColors = [];
 
@@ -57,7 +59,15 @@ wsServer.on('request', (req, res) => {
     connection.on('open', () => console.log('opened!'));
     connection.on('close', () => {
         delete clients[clientId];
-        // TODO delete client from games it had joined
+
+        // delete client from games it had joined previously
+        Object.keys(games).forEach(g => {
+            const clientsAfterRemoval = games[g].clients.filter(client => client.clientId !== clientId);
+            if (clientsAfterRemoval.length !== games[g].clients.length) {
+                games[g].clients = clientsAfterRemoval;
+                console.log(`Removing client ${clientId} from game ${g} due to closed connection`);
+            }
+        });
         console.log("Client Closed!");
     });
     connection.on('message', (message) => {
@@ -73,16 +83,20 @@ wsServer.on('request', (req, res) => {
                 clients: [],
                 ballsNum: 20
             }
+
             games[gameId] = newGame;
             console.log(`Game ${gameId} created by client ${response.clientId}`);
 
-            // TODO broadcast a new game was created
-
-            connection.send(JSON.stringify({
+            const payload = {
                 method: METHODS.CREATE,
                 game: newGame
-            }));
-            console.log(games)
+            };
+
+            Object.keys(clients).forEach(c => {
+                clients[c].send(JSON.stringify(payload));
+            });
+
+            console.log(`Broadcasting new game ${gameId} to all clients`);
         }
 
         // a client want to join
@@ -96,8 +110,17 @@ wsServer.on('request', (req, res) => {
                 return;
             }
 
-            games[gameId].clients.push({ clientId: color });
-            console.log(`Client ${clientId} joined game ${gameId}`);
+            // Client cant join a game he has already joined
+            if (games[gameId].clients.filter(c => c.clientId === clientId).length > 0) {
+                console.log(`Client ${clientId} could not join game ${gameId} because it has already joined`);
+                return;
+            }
+
+            games[gameId].clients.push({
+                clientId: clientId,
+                color: color
+            });
+            console.log(`Client ${clientId} joined game ${gameId} as color ${color}`);
 
             // tell all clients in this game a new client has joined
             const payload = {
@@ -105,8 +128,10 @@ wsServer.on('request', (req, res) => {
                 game: games[gameId]
             };
             games[gameId].clients.forEach(c => {
-                clients[c.clientId].connection.send(JSON.stringify(payload));
+                clients[c.clientId].send(JSON.stringify(payload));
             });
+
+            console.log(`Broadcasting to all clients that ${clientId} joined game ${gameId} as color ${color}`);
 
         }
 
