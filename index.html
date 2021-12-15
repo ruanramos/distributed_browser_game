@@ -10,12 +10,16 @@
 
 <body>
     <h1>Square Game</h1>
+    <section>
+        <div id="header"></div>
+        <br>
+    </section>
     <button id="btnCreateGame">New Game</button>
     <select id="selectJoinGame">
 
     </select>
     <button type="submit" id="btnJoinGame">Join</button>
-    <button id="btnList">List</button>
+    <!-- <button id="btnList">List</button> -->
 
     <script>
         let clientId = null;
@@ -25,7 +29,8 @@
         const btnCreateGame = document.getElementById("btnCreateGame");
         const btnJoinGame = document.getElementById("btnJoinGame");
         const selectJoinGame = document.getElementById("selectJoinGame");
-        const btnList = document.getElementById("btnList");
+        const header = document.getElementById("header");
+        // const btnList = document.getElementById("btnList");
 
         // Wiring events
         btnCreateGame.addEventListener("click", e => {
@@ -49,12 +54,12 @@
             ws.send(JSON.stringify(payload));
         });
 
-        btnList.addEventListener("click", e => {
-            const payload = {
-                method: "list"
-            };
-            ws.send(JSON.stringify(payload));
-        });
+        // btnList.addEventListener("click", e => {
+        //     const payload = {
+        //         method: "list"
+        //     };
+        //     ws.send(JSON.stringify(payload));
+        // });
 
         ws.onmessage = (message) => {
             // message.data
@@ -64,17 +69,21 @@
             // TODO make this part better, maybe a class extending response
             if (response.method === 'connect') {
                 clientId = response.clientId;
-                document.body.append("Client: " + clientId);
+                header.append("Client: " + clientId);
                 console.log("Client id set successfully " + clientId);
-                console.log(response);
-                response.games.forEach(game => {
-                    const joinOption = document.createElement('option');
-                    joinOption.value = game;
-                    joinOption.innerHTML = game;
-                    selectJoinGame.appendChild(joinOption);
-                });
+                btnJoinGame.hidden = true;
+                if (response.games.length > 0) {
+                    btnJoinGame.hidden = false;
+                    response.games.forEach(game => {
+                        const joinOption = document.createElement('option');
+                        joinOption.value = game;
+                        joinOption.innerHTML = game;
+                        selectJoinGame.appendChild(joinOption);
+                    });
+                }
 
             } else if (response.method === 'create') {
+                btnJoinGame.hidden = false;
                 gameId = response.game.gameId;
                 const joinOption = document.createElement('option');
                 joinOption.value = gameId;
@@ -83,20 +92,54 @@
                 console.log("Game id set successfully " + gameId);
             } else if (response.method === 'join') {
                 const selectedGameId = selectJoinGame.value;
+
+                // Check if im already in game
+                let lastClient = response.game.clients[response.game.clients.length - 1]
+                let isLastClient = lastClient.clientId === clientId;
+                if (!isLastClient) {
+                    console.log("New client joined game " + response.game.gameId);
+                    console.log("Players: " + response.game.clients.length);
+                    while (header.firstChild) {
+                        header.removeChild(header.firstChild);
+                    }
+                    header.append("Client: " + clientId);
+                    const gameHeader = document.createElement('h2');
+                    gameHeader.innerText = `Joined Game: ${response.game.gameId}`;
+                    header.appendChild(gameHeader);
+                    Object.entries(response.game).forEach(entry => {
+                        const div = document.createElement('div');
+                        div.id = "game-info";
+                        div.innerHTML = `${entry[0]}: ${JSON.stringify(entry[1])}`;
+                        header.append(div);
+                    })
+                    return;
+                }
                 const color = response.game.clients.filter(client => client.clientId === clientId)[0]['color'];
                 const colorDiv = document.createElement('div');
                 colorDiv.style.backgroundColor = color;
                 colorDiv.style.height = '200px';
                 colorDiv.style.width = '200px';
                 document.body.append(colorDiv);
-                console.log("New client joined game " + response.game.gameId);
-                console.log("Players: " + response.game.clients.length);
+                btnJoinGame.hidden = true;
+                selectJoinGame.hidden = true;
+                btnCreateGame.hidden = true;
 
-            } else if (response.method === 'list') {
-                const div = document.createElement('div');
-                div.innerHTML = `<p>${JSON.stringify(response.games)}</p>`;
-                document.body.append(div);
+                const gameHeader = document.createElement('h2');
+                gameHeader.innerText = `Joined Game: ${response.game.gameId}`;
+                header.appendChild(gameHeader);
+
+                Object.entries(response.game).forEach(entry => {
+                    const div = document.createElement('div');
+                    div.innerHTML = `${entry[0]}: ${JSON.stringify(entry[1])}`;
+                    header.append(div);
+                });
             }
+
+            // else if (response.method === 'list') {
+            //     const div = document.createElement('div');
+            //     div.innerHTML = `<p>${JSON.stringify(response.games)}</p>`;
+            //     document.body.append(div);
+            // }
 
         }
     </script>

@@ -23,7 +23,7 @@ const METHODS = { PLAY: 'play', CREATE: 'create', JOIN: 'join', CONNECT: 'connec
 const MAX_PLAYERS = 3;
 
 // TODO make colors bound to game, not to server
-let COLORS = ['red', 'green', 'yellow', 'black', 'blue', 'purple', 'orange'];
+let COLORS = ['red', 'green', 'yellow', 'black', 'blue', 'purple', 'orange', 'Maroon', 'Salmon', 'Silver', 'Lime', 'Aqua', 'Fuchsia', 'Navy', 'Teal'];
 let usedColors = [];
 
 app.addListener('connection', () => console.log('Received new client connection'));
@@ -57,6 +57,7 @@ wsServer.on('request', (req, res) => {
     }));
 
     connection.on('open', () => console.log('opened!'));
+
     connection.on('close', () => {
         delete clients[clientId];
 
@@ -68,6 +69,7 @@ wsServer.on('request', (req, res) => {
                 console.log(`Removing client ${clientId} from game ${g} due to closed connection`);
             }
         });
+
         console.log("Client Closed!");
     });
     connection.on('message', (message) => {
