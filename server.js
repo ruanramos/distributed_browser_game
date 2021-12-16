@@ -18,8 +18,9 @@ client.listen(3001, () => console.log('listening on http port 3001'));
 
 let clients = {};
 let games = {};
+let gameStates = {};
 
-const METHODS = { PLAY: 'play', CREATE: 'create', JOIN: 'join', CONNECT: 'connect' };
+const METHODS = { PLAY: 'play', CREATE: 'create', JOIN: 'join', CONNECT: 'connect', UPDATE: 'update' };
 const MAX_PLAYERS = 3;
 
 // TODO make colors bound to game, not to server
@@ -83,7 +84,8 @@ wsServer.on('request', (req, res) => {
                 gameCreator: clientId,
                 gameId: gameId,
                 clients: [],
-                ballsNum: 20
+                ballsNum: 20,
+                state: new Array(20).fill(0)
             }
 
             games[gameId] = newGame;
@@ -91,7 +93,12 @@ wsServer.on('request', (req, res) => {
 
             const payload = {
                 method: METHODS.CREATE,
-                game: newGame
+                game: {
+                    gameCreator: clientId,
+                    gameId: gameId,
+                    clients: [],
+                    ballsNum: 20
+                }
             };
 
             Object.keys(clients).forEach(c => {
@@ -99,6 +106,10 @@ wsServer.on('request', (req, res) => {
             });
 
             console.log(`Broadcasting new game ${gameId} to all clients`);
+
+            broadcastGameState(gameId);
+            console.log(`Starting periodic broadcast of game ${gameId} to clients that joined it`);
+
         }
 
         // a client want to join
@@ -144,22 +155,39 @@ wsServer.on('request', (req, res) => {
             const gameId = clientMessage.gameId;
             const client = clientMessage.client;
             const ballId = clientMessage.ballId;
-            const payload = {
-                method: METHODS.PLAY,
-                client: client,
-                gameId: gameId,
-                ballId: ballId
-            };
-            games[gameId].clients.forEach(c => {
-                if (c.clientId !== client.clientId) clients[c.clientId].send(JSON.stringify(payload));
-            });
+            const game = games[gameId];
 
-            console.log(`Broadcasting to all clients that ${client.clientId} played div number ${ballId} on game ${gameId}`);
+            // update game state server side
+            game.state[ballId] = client.color;
+
+            console.log(`Client ${client.clientId} played on ball ${ballId + 1}`);
         }
 
-        if (clientMessage.method === 'list') {
-            const p = JSON.stringify({ method: 'list', games: games });
-            connection.send(p);
-        }
+        // if (clientMessage.method === 'list') {
+        //     const p = JSON.stringify({ method: 'list', games: games });
+        //     connection.send(p);
+        // }
     });
 })
+
+function broadcastGameState(gameId) {
+    const game = games[gameId];
+
+    setInterval(() => {
+        const payload = {
+            method: METHODS.UPDATE,
+            game: {
+                gameId: gameId,
+                state: game.state
+            }
+        };
+
+        if (game.clients.length > 0) {
+            game.clients.forEach(c => {
+                if (c.clientId !== client.clientId) clients[c.clientId].send(JSON.stringify(payload));
+            });
+        }
+        console.log(`Broadcasting game state to all clients in game ${gameId}`);
+
+    }, 200);
+}
