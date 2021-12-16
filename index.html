@@ -84,7 +84,9 @@
                     });
                 }
 
-            } else if (response.method === 'create') {
+            }
+
+            if (response.method === 'create') {
                 btnJoinGame.hidden = false;
                 gameId = response.game.gameId;
                 const joinOption = document.createElement('option');
@@ -92,7 +94,9 @@
                 joinOption.innerHTML = gameId;
                 selectJoinGame.appendChild(joinOption);
                 console.log("Game id set successfully " + gameId);
-            } else if (response.method === 'join') {
+            }
+
+            if (response.method === 'join') {
                 const selectedGameId = selectJoinGame.value;
                 const game = response.game;
                 const gameId = game.gameId;
@@ -124,7 +128,8 @@
                     })
                     return;
                 }
-                const clientColor = clientsInGame.filter(client => client.clientId === clientId)[0]['color'];
+                const client = clientsInGame.filter(client => client.clientId === clientId)[0];
+                const clientColor = client['color'];
                 const colorDiv = document.createElement('div');
                 colorDiv.style.backgroundColor = clientColor;
                 colorDiv.style.height = '200px';
@@ -149,6 +154,7 @@
                     divBoard.removeChild(divBoard.firstChild);
                 }
 
+                // render grid again after changes
                 for (let i = 0; i < game.ballsNum; i++) {
                     const b = document.createElement('button');
                     b.id = "ball_" + i;
@@ -157,10 +163,28 @@
                     b.style.width = '150px';
                     b.style.height = '150px';
                     b.addEventListener("click", e => {
+                        const payload = {
+                            method: 'play',
+                            client: client,
+                            gameId: gameId,
+                            ballId: i + 1
+                        };
+
+                        ws.send(JSON.stringify(payload));
                         b.style.background = clientColor;
                     });
                     divBoard.appendChild(b);
                 }
+            }
+
+            if (response.method === 'play') {
+                gameId = response.gameId;
+                ballId = response.ballId;
+                client = response.client;
+
+                document.querySelector('#ball_' + (ballId - 1)).style.background = client.color;
+
+                console.log("Game id set successfully " + gameId);
             }
 
             // else if (response.method === 'list') {
