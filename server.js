@@ -7,18 +7,15 @@ const { v4: uuidv4 } = require('uuid');
 // mongoose.connect()
 
 const port = 3000;
+const host = "0.0.0.0";
 const app = express();
 
-const client = express();
-client.get("/", function (req, res) {
+app.get("/", function (req, res) {
     res.sendFile(__dirname + '/index.html');
 });
 
-client.listen(process.env.PORT || 3001, () => console.log('listening on http port 3001'));
-
 let clients = {};
 let games = {};
-let gameStates = {};
 
 const METHODS = { PLAY: 'play', CREATE: 'create', JOIN: 'join', CONNECT: 'connect', UPDATE: 'update' };
 const MAX_PLAYERS = 3;
@@ -29,8 +26,8 @@ let usedColors = [];
 
 app.addListener('connection', () => console.log('Received new client connection'));
 
-const server = app.listen(process.env.PORT || port, "0.0.0.0", () => {
-    console.log(`App listening at http://localhost:${port}`);
+const server = app.listen(process.env.PORT || port, host, () => {
+    console.log(`App listening at http://${host}:${port}`);
 });
 
 const wsServer = new websocketServer({
@@ -107,7 +104,7 @@ wsServer.on('request', (req, res) => {
 
             console.log(`Broadcasting new game ${gameId} to all clients`);
 
-            broadcastGameState(gameId);
+            broadcastGameState(gameId, clientId);
             console.log(`Starting periodic broadcast of game ${gameId} to clients that joined it`);
 
         }
@@ -170,7 +167,7 @@ wsServer.on('request', (req, res) => {
     });
 })
 
-function broadcastGameState(gameId) {
+function broadcastGameState(gameId, client) {
     const game = games[gameId];
 
     setInterval(() => {
