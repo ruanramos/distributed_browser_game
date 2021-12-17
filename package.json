@@ -7,8 +7,11 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon server.js"
   },
+  "engines": {
+    "node": "16.x"
+  },
   "keywords": [],
-  "author": "",
+  "author": "Ruan Ramos",
   "license": "ISC",
   "dependencies": {
     "express": "^4.17.1",
