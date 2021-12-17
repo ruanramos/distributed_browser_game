@@ -14,7 +14,7 @@ client.get("/", function (req, res) {
     res.sendFile(__dirname + '/index.html');
 });
 
-client.listen(process.env.PORT || 3001, () => console.log('listening on http port 3001'));
+client.listen(process.env.PORT || 3001, "0.0.0.0", () => console.log('listening on http port 3001'));
 
 let clients = {};
 let games = {};
@@ -29,7 +29,7 @@ let usedColors = [];
 
 app.addListener('connection', () => console.log('Received new client connection'));
 
-const server = app.listen(process.env.PORT || port, () => {
+const server = app.listen(process.env.PORT || port, "0.0.0.0", () => {
     console.log(`App listening at http://localhost:${port}`);
 });
 
