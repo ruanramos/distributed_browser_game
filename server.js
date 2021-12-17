@@ -14,7 +14,7 @@ client.get("/", function (req, res) {
     res.sendFile(__dirname + '/index.html');
 });
 
-client.listen(process.env.PORT || 3001, "0.0.0.0", () => console.log('listening on http port 3001'));
+client.listen(process.env.PORT || 3001, () => console.log('listening on http port 3001'));
 
 let clients = {};
 let games = {};
