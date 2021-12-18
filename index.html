@@ -25,8 +25,8 @@
 
     <script>
         let clientId = null;
-        // let ws = new WebSocket(`wss://${window.location.host}`);
-        let ws = new WebSocket(`ws://${window.location.host}`);
+        let ws = new WebSocket(`wss://${window.location.host}`);
+        // let ws = new WebSocket(`ws://${window.location.host}`);
 
         // HTML elements
         const btnCreateGame = document.getElementById("btnCreateGame");
@@ -60,14 +60,20 @@
         });
 
         btnReset.addEventListener("click", e => {
-            fetch(`http://${window.location.host}/game`, {
+            // fetch(`http://${window.location.host}/game`, {
+            //     method: "delete"
+            // });
+            fetch(`https://${window.location.host}/game`, {
                 method: "delete"
             });
             window.location.reload();
         });
 
         btnDelete.addEventListener("click", e => {
-            fetch(`http://${window.location.host}/game/${selectJoinGame.value}`, {
+            // fetch(`http://${window.location.host}/game/${selectJoinGame.value}`, {
+            //     method: "delete"
+            // });
+            fetch(`https://${window.location.host}/game/${selectJoinGame.value}`, {
                 method: "delete"
             });
             window.location.reload();

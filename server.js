@@ -7,8 +7,8 @@ const { v4: uuidv4 } = require('uuid');
 // mongoose.connect()
 
 const port = 3000;
-// const host = "0.0.0.0";
-const host = "localhost";
+const host = "0.0.0.0";
+// const host = "localhost";
 const app = express();
 
 app.get("/", function (req, res) {
