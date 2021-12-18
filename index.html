@@ -20,11 +20,13 @@
     </select>
     <button type="submit" id="btnJoinGame">Join</button>
     <div id="divBoard"></div>
-    <!-- <button id="btnList">List</button> -->
+    <button id="btnReset">Reset</button>
+    <button id="btnDelete">Delete</button>
 
     <script>
         let clientId = null;
-        let ws = new WebSocket(`wss://${window.location.host}`);
+        // let ws = new WebSocket(`wss://${window.location.host}`);
+        let ws = new WebSocket(`ws://${window.location.host}`);
 
         // HTML elements
         const btnCreateGame = document.getElementById("btnCreateGame");
@@ -32,7 +34,8 @@
         const selectJoinGame = document.getElementById("selectJoinGame");
         const header = document.getElementById("header");
         const divBoard = document.getElementById("divBoard");
-        // const btnList = document.getElementById("btnList");
+        const btnReset = document.getElementById("btnReset");
+        const btnDelete = document.getElementById("btnDelete");
 
         // Wiring events
         btnCreateGame.addEventListener("click", e => {
@@ -56,12 +59,19 @@
             ws.send(JSON.stringify(payload));
         });
 
-        // btnList.addEventListener("click", e => {
-        //     const payload = {
-        //         method: "list"
-        //     };
-        //     ws.send(JSON.stringify(payload));
-        // });
+        btnReset.addEventListener("click", e => {
+            fetch(`http://${window.location.host}/game`, {
+                method: "delete"
+            });
+            window.location.reload();
+        });
+
+        btnDelete.addEventListener("click", e => {
+            fetch(`http://${window.location.host}/game/${selectJoinGame.value}`, {
+                method: "delete"
+            });
+            window.location.reload();
+        });
 
         ws.onmessage = (message) => {
             const response = JSON.parse(message.data);

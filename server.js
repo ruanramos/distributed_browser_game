@@ -7,11 +7,24 @@ const { v4: uuidv4 } = require('uuid');
 // mongoose.connect()
 
 const port = 3000;
-const host = "0.0.0.0";
+// const host = "0.0.0.0";
+const host = "localhost";
 const app = express();
 
 app.get("/", function (req, res) {
     res.sendFile(__dirname + '/index.html');
+});
+
+app.delete("/game/:id", function (req, res) {
+    // delete game
+    delete games[req.params.id];
+    res.sendStatus(200);
+})
+
+app.delete("/game", function (req, res) {
+    // delete all games
+    for (const member in games) delete games[member];
+    res.sendStatus(200);
 });
 
 let clients = {};
@@ -45,12 +58,12 @@ wsServer.on('request', (req, res) => {
     let gameIds = [];
     Object.keys(games).forEach(g => {
         gameIds.push(g);
-    })
+    });
 
     // send back the client connect
     connection.send(JSON.stringify({
-        clientId: clientId,
         method: METHODS.CONNECT,
+        clientId: clientId,
         games: gameIds
     }));
 
@@ -159,11 +172,6 @@ wsServer.on('request', (req, res) => {
 
             console.log(`Client ${client.clientId} played on ball ${ballId + 1}`);
         }
-
-        // if (clientMessage.method === 'list') {
-        //     const p = JSON.stringify({ method: 'list', games: games });
-        //     connection.send(p);
-        // }
     });
 })
 
@@ -183,8 +191,8 @@ function broadcastGameState(gameId, client) {
             game.clients.forEach(c => {
                 if (c.clientId !== client.clientId) clients[c.clientId].send(JSON.stringify(payload));
             });
+            console.log(`Broadcasting game state to all clients in game ${gameId}`);
         }
-        console.log(`Broadcasting game state to all clients in game ${gameId}`);
 
-    }, 200);
+    }, 100);
 }
