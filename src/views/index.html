@@ -5,28 +5,33 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Square Game</title>
 </head>
 
 <body>
     <h1>Square Game</h1>
     <section>
-        <div id="header"></div>
+        <div id="header">
+            <p id="clientId">
+                <p />
+                <button id="btnReset">Reset</button>
+                <button id="btnDelete">Delete Selected Game</button>
+                <button id="btnRefresh">Refresh</button>
+        </div>
         <br>
     </section>
     <button id="btnCreateGame">New Game</button>
+    <label>Games:</label>
     <select id="selectJoinGame">
 
     </select>
     <button type="submit" id="btnJoinGame">Join</button>
     <div id="divBoard"></div>
-    <button id="btnReset">Reset</button>
-    <button id="btnDelete">Delete</button>
 
     <script>
         let clientId = null;
-        let ws = new WebSocket(`wss://${window.location.host}`);
-        // let ws = new WebSocket(`ws://${window.location.host}`);
+        // let ws = new WebSocket(`wss://${window.location.host}`);
+        let ws = new WebSocket(`ws://${window.location.host}`);
 
         // HTML elements
         const btnCreateGame = document.getElementById("btnCreateGame");
@@ -36,6 +41,7 @@
         const divBoard = document.getElementById("divBoard");
         const btnReset = document.getElementById("btnReset");
         const btnDelete = document.getElementById("btnDelete");
+        const btnRefresh = document.getElementById("btnRefresh");
 
         // Wiring events
         btnCreateGame.addEventListener("click", e => {
@@ -60,23 +66,50 @@
         });
 
         btnReset.addEventListener("click", e => {
-            // fetch(`http://${window.location.host}/game`, {
+            const removeAndRefresh = async () => {
+                await fetch(`http://${window.location.host}/game`, {
+                    method: "delete"
+                });
+
+                const payload = {
+                    method: "refresh"
+                };
+
+                ws.send(JSON.stringify(payload));
+            }
+
+            removeAndRefresh();
+
+            // fetch(`https://${window.location.host}/game`, {
             //     method: "delete"
             // });
-            fetch(`https://${window.location.host}/game`, {
-                method: "delete"
-            });
-            window.location.reload();
+        });
+
+        btnRefresh.addEventListener("click", e => {
+            const payload = {
+                method: "refresh"
+            };
+
+            ws.send(JSON.stringify(payload));
         });
 
         btnDelete.addEventListener("click", e => {
-            // fetch(`http://${window.location.host}/game/${selectJoinGame.value}`, {
+            const removeAndRefresh = async () => {
+                await fetch(`http://${window.location.host}/game/${selectJoinGame.value}`, {
+                    method: "delete"
+                });
+
+                const payload = {
+                    method: "refresh"
+                };
+
+                ws.send(JSON.stringify(payload));
+            }
+
+            removeAndRefresh();
+            // fetch(`https://${window.location.host}/game/${selectJoinGame.value}`, {
             //     method: "delete"
             // });
-            fetch(`https://${window.location.host}/game/${selectJoinGame.value}`, {
-                method: "delete"
-            });
-            window.location.reload();
         });
 
         ws.onmessage = (message) => {
@@ -85,9 +118,11 @@
             // TODO make this part better, maybe a class extending response
             if (response.method === 'connect') {
                 clientId = response.clientId;
-                header.append("Client: " + clientId);
+                document.querySelector('#clientId').textContent = "Client: " + clientId;
                 console.log("Client id set successfully " + clientId);
                 btnJoinGame.hidden = true;
+
+                // List already existing games when client joined
                 if (response.games.length > 0) {
                     btnJoinGame.hidden = false;
                     response.games.forEach(game => {
@@ -97,7 +132,6 @@
                         selectJoinGame.appendChild(joinOption);
                     });
                 }
-
             }
 
             if (response.method === 'create') {
@@ -156,6 +190,7 @@
                 btnJoinGame.hidden = true;
                 selectJoinGame.hidden = true;
                 btnCreateGame.hidden = true;
+                btnDelete.hidden = true;
 
                 // draw header
                 const gameHeader = document.createElement('h2');
@@ -195,16 +230,6 @@
                 }
             }
 
-            if (response.method === 'play') {
-                gameId = response.gameId;
-                ballId = response.ballId;
-                client = response.client;
-
-                // document.querySelector('#ball_' + (ballId - 1)).style.background = client.color;
-
-                console.log(`Client ${client.clientId} played ${ballId} on game ${gameId}`);
-            }
-
             if (response.method === 'update') {
                 let gameId = response.game.gameId;
                 let state = response.game.state;
@@ -214,12 +239,23 @@
                 }
             }
 
-            // else if (response.method === 'list') {
-            //     const div = document.createElement('div');
-            //     div.innerHTML = `<p>${JSON.stringify(response.games)}</p>`;
-            //     document.body.append(div);
-            // }
+            if (response.method === 'refresh') {
+                const games = response.games || [];
+                while (selectJoinGame.firstChild) {
+                    selectJoinGame.removeChild(selectJoinGame.firstChild);
+                }
+                btnJoinGame.hidden = false;
 
+                if (games.length > 0) {
+                    btnJoinGame.hidden = false;
+                    games.forEach(game => {
+                        const joinOption = document.createElement('option');
+                        joinOption.value = game;
+                        joinOption.innerHTML = game;
+                        selectJoinGame.appendChild(joinOption);
+                    });
+                }
+            }
         }
     </script>
 </body>
