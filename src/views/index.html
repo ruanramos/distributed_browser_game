@@ -30,8 +30,8 @@
 
     <script>
         let clientId = null;
-        // let ws = new WebSocket(`wss://${window.location.host}`);
-        let ws = new WebSocket(`ws://${window.location.host}`);
+        let ws = new WebSocket(`wss://${window.location.host}`);
+        // let ws = new WebSocket(`ws://${window.location.host}`);
 
         // HTML elements
         const btnCreateGame = document.getElementById("btnCreateGame");
@@ -67,7 +67,7 @@
 
         btnReset.addEventListener("click", e => {
             const removeAndRefresh = async () => {
-                await fetch(`http://${window.location.host}/game`, {
+                await fetch(`https://${window.location.host}/game`, {
                     method: "delete"
                 });
 
@@ -95,7 +95,7 @@
 
         btnDelete.addEventListener("click", e => {
             const removeAndRefresh = async () => {
-                await fetch(`http://${window.location.host}/game/${selectJoinGame.value}`, {
+                await fetch(`https://${window.location.host}/game/${selectJoinGame.value}`, {
                     method: "delete"
                 });
 

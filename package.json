@@ -8,7 +8,7 @@
     "start": "node dist/server.js",
     "build": "yarn clean && yarn tsc && yarn copy-files",
     "clean": "rm -rf ./dist",
-    "dev": "ts-node-dev --respawn --transpile-only --ignore-watch node_modules src/persistence_server.ts",
+    "dev": "ts-node-dev --respawn --transpile-only --ignore-watch node_modules src/server.ts",
     "copy-files": "cp -r ./src/views/ ./dist/views"
   },
   "engines": {

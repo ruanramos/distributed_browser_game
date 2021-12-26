@@ -7,8 +7,8 @@ import { game } from './@types/types'
 const WebsocketServer = server
 
 const port: number | undefined = parseInt(process.env.PORT as string) || 9001
-// const host = "0.0.0.0";
-const host = 'localhost'
+const host = '0.0.0.0'
+// const host = 'localhost'
 const app = express()
 
 app.use(express.json())
@@ -43,7 +43,7 @@ const usedColors = []
 app.addListener('connection', () => console.log('Received new client connection'))
 
 const myServer = app.listen(port, host, () => {
-  console.log(`App listening at http://${host}:${port}`)
+  console.log(`App listening at https://${host}:${port}`)
 })
 
 const wsServer = new WebsocketServer({
